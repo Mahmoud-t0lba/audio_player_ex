@@ -1,134 +1,107 @@
-import 'package:audio_test/player_img.dart';
+// ignore_for_file: library_private_types_in_public_api
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
-class PlayMusic extends StatefulWidget {
-  const PlayMusic({Key? key}) : super(key: key);
+class AudioPlayerUrl extends StatefulWidget {
+  const AudioPlayerUrl({super.key});
 
   @override
-  State<PlayMusic> createState() => _PlayMusicState();
+  _AudioPlayerUrlState createState() => _AudioPlayerUrlState();
 }
 
-class _PlayMusicState extends State<PlayMusic> {
-  AudioPlayer audioPlayer = AudioPlayer();
-  PlayerState audioPlayerState = PlayerState.paused;
+class _AudioPlayerUrlState extends State<AudioPlayerUrl> {
+  AudioPlayer player = AudioPlayer();
+  PlayerState audioState = PlayerState.paused;
   String audioUrl =
       'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3';
   Source sourceUrl = UrlSource(
       'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3');
+
   int timeProgress = 0;
   int audioDuration = 0;
 
   Widget slider() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(getTimeString(timeProgress)),
-              Text(getTimeString(audioDuration)),
-            ],
-          ),
-        ),
-        SizedBox(
-          width: 300,
-          child: Slider(
-            value: timeProgress.toDouble(),
-            max: audioDuration.toDouble(),
-            onChanged: (value) {
-              seekTiSec(value.toInt());
-            },
-          ),
-        ),
-      ],
+    return SizedBox(
+      width: 300.0,
+      child: Slider.adaptive(
+          value: timeProgress.toDouble(),
+          max: audioDuration.toDouble(),
+          onChanged: (value) {
+            seekToSec(value.toInt());
+          }),
     );
   }
 
   @override
   void initState() {
     super.initState();
-    audioPlayer.onPlayerStateChanged.listen((PlayerState s) {
-      setState(() {
-        audioPlayerState = s;
-      });
-    });
-    audioPlayer.setSourceUrl(audioUrl);
-    audioPlayer.onDurationChanged.listen((Duration duration) {
-      setState(() {
-        audioDuration = duration.inMilliseconds;
-      });
-    });
-    audioPlayer.onPositionChanged.listen((Duration duration) {
-      setState(() {
-        timeProgress = duration.inMilliseconds;
-      });
-    });
+
+    player.onPlayerStateChanged
+        .listen((PlayerState state) => setState(() => audioState = state));
+    player.setSourceUrl(audioUrl);
+    player.onDurationChanged.listen((Duration duration) =>
+        setState(() => audioDuration = duration.inSeconds));
+    player.onPositionChanged.listen((Duration duration) =>
+        setState(() => timeProgress = duration.inSeconds));
   }
 
   @override
   void dispose() {
     super.dispose();
-    audioPlayer.release();
-    audioPlayer.dispose();
+    player.release();
+    player.dispose();
   }
 
-  playMusic() async {
-    await audioPlayer.play(sourceUrl);
+  play() async {
+    await player.play(sourceUrl);
   }
 
-  pausedMusic() async {
-    await audioPlayer.pause();
+  paused() async {
+    await player.pause();
   }
 
   @override
   Widget build(BuildContext context) {
-    var size = MediaQuery.of(context).size;
     return Scaffold(
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const PlayedImg(),
-          SizedBox(height: size.height * 0.05),
-          slider(),
-          SizedBox(height: size.height * 0.05),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.keyboard_double_arrow_left),
-              ),
-              IconButton(
-                onPressed: () {
-                  ///
-                  audioPlayerState == PlayerState.playing
-                      ? pausedMusic()
-                      : playMusic();
-
-                  ///
-                },
-                icon: Icon(
-                  audioPlayerState == PlayerState.playing
-                      ? Icons.pause
-                      : Icons.play_arrow_rounded,
+      body: Container(
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(getTimeString(timeProgress)),
+                const SizedBox(width: 20),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width - 200,
+                  child: slider(),
                 ),
+                const SizedBox(width: 20),
+                Text(getTimeString(audioDuration))
+              ],
+            ),
+            IconButton(
+              iconSize: 50,
+              onPressed: () {
+                audioState == PlayerState.playing ? paused() : play();
+              },
+              icon: Icon(
+                audioState == PlayerState.playing
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
               ),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.keyboard_double_arrow_right),
-              ),
-            ],
-          )
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  void seekTiSec(int sec) {
+  void seekToSec(int sec) {
     Duration newPosition = Duration(seconds: sec);
-    audioPlayer.seek(newPosition);
+    player.seek(newPosition);
   }
 
   String getTimeString(int seconds) {

@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Audio Demo',
-      home: PlayMusic(),
+      home: AudioPlayerUrl(),
     );
   }
 }
